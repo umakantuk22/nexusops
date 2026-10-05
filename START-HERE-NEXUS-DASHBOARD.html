@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusOps — AI-Native Revenue & Customer Operations Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      cursor: none; /* Desktop custom luminous pointer */
+    }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+
+    /* Custom Ambient Luminous Pointer */
+    #nexusPointerDot {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background-color: #818cf8;
+      box-shadow: 0 0 12px 2px rgba(129, 140, 248, 0.75);
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      transition: width 0.2s ease, height 0.2s ease, background-color 0.2s ease;
+    }
+
+    #nexusPointerHalo {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 9999px;
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.12) 0%, rgba(129, 140, 248, 0.0) 70%);
+      transform: translate(-50%, -50%);
+      z-index: 9998;
+      transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), height 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background 0.2s ease;
+    }
+
+    /* Hover State for Interactive Elements */
+    body.is-hovering #nexusPointerDot {
+      width: 10px;
+      height: 10px;
+      background-color: #a5b4fc;
+      box-shadow: 0 0 18px 3px rgba(165, 180, 252, 0.95);
+    }
+
+    body.is-hovering #nexusPointerHalo {
+      width: 48px;
+      height: 48px;
+      border-color: rgba(165, 180, 252, 0.6);
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.25) 0%, rgba(129, 140, 248, 0.02) 75%);
+    }
+
+    @media (pointer: coarse) {
+      body { cursor: auto; }
+      #nexusPointerDot, #nexusPointerHalo { display: none !important; }
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+  <!-- Luminous Ambient Pointer Elements -->
+  <div id="nexusPointerDot"></div>
+  <div id="nexusPointerHalo"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ============================================================== -->
+  <!-- AUTHENTICATION VIEW (LOGIN & SIGN UP)                          -->
+  <!-- ============================================================== -->
+  <div id="authScreen" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/30 via-slate-950 to-slate-950">
+    <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+      <!-- Brand Logo -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center font-extrabold text-white text-xl shadow-xl shadow-indigo-500/30">
+          N
+        </div>
+        <h1 class="text-2xl font-extrabold text-white tracking-tight">NEXUS<span class="text-indigo-400">OPS</span></h1>
+        <p class="text-xs text-slate-400">AI-Native Revenue & Customer Operations Platform</p>
+      </div>
+
+      <!-- Auth Mode Switcher Tabs -->
+      <div class="grid grid-cols-2 p-1 bg-slate-950/80 rounded-xl border border-slate-800 text-xs font-semibold">
+        <button id="tabLogin" onclick="switchAuthMode('login')" class="py-2 rounded-lg bg-indigo-600 text-white transition shadow-sm">Sign In</button>
+        <button id="tabSignup" onclick="switchAuthMode('signup')" class="py-2 rounded-lg text-slate-400 hover:text-white transition">Create Account</button>
+      </div>
+
+      <!-- SIGN IN FORM -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Work Email</label>
+          <input type="email" id="loginEmail" value="alex.morgan@nexusops.com" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="name@company.com">
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-semibold text-slate-300">Password</label>
+            <span class="text-[10px] text-slate-500">Default: Password123!</span>
+          </div>
+          <input type="password" id="loginPassword" value="Password123!" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+        </div>
+        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-lg shadow-indigo-600/25">
+          Sign In to Workspace →
+        </button>
+
+        <!-- 1-Click Quick Demo Persona Logins -->
+        <div class="pt-4 border-t border-slate-800/80 space-y-2">
+          <div class="text-[10px] font-mono uppercase tracking-wider text-slate-500 text-center">Instant 1-Click Demo Accounts</div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button type="button" onclick="quickLogin('alex.morgan@nexusops.com', 'Alex Morgan', 'Nexus Enterprise Ops', 'OWNER')" class="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left transition">
+              <div class="font-semibold text-white">Alex Morgan</div>
+              <div class="text-[10px] text-indigo-400 font-mono">OWNER (Full Access)</div>
+            </button>
+            <button type="button" onclick="quickLogin('marcus.vance@acme.com', 'Marcus Vance', 'Acme Global', 'VIEWER')" class="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left transition">
+              <div class="font-semibold text-white">Marcus Vance</div>
+              <div class="text-[10px] text-amber-400 font-mono">VIEWER (Read-Only)</div>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="signupForm" onsubmit="handleSignupSubmit(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Full Name</label>
+          <input type="text" id="signupName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="e.g. Umesh Sharma">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Work Email</label>
+          <input type="email" id="signupEmail" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="e.g. umesh@sharmaops.com">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Company / Workspace Name</label>
+          <input type="text" id="signupOrg" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="e.g. Sharma Global Systems">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+          <input type="password" id="signupPassword" required minlength="8" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="At least 8 characters">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Initial Role & Permission Level</label>
+          <select id="signupRole" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <option value="OWNER" selected>OWNER (Full Organization & AI Gateway Control)</option>
+            <option value="ADMIN">ADMIN (Workspace Management)</option>
+            <option value="MANAGER">MANAGER (Pipeline & Team Management)</option>
+            <option value="VIEWER">VIEWER (Read-Only Authorization)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-lg shadow-indigo-600/25">
+          Create Workspace & Launch Platform →
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MAIN APPLICATION DASHBOARD (AUTHENTICATED)                     -->
+  <!-- ============================================================== -->
+  <div id="appContainer" class="hidden min-h-screen flex flex-col antialiased">
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="mobileSidebarBackdrop" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between">
+      <div class="flex items-center space-x-3 sm:space-x-6">
+        <!-- Mobile Hamburger Button -->
+        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white focus:outline-none" aria-label="Toggle Navigation">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Brand Logo -->
+        <div class="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer shrink-0" onclick="switchView('my-work')">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/25">
+            N
+          </div>
+          <div>
+            <span class="font-bold tracking-tight text-base sm:text-lg text-white">NEXUS<span class="text-indigo-400">OPS</span></span>
+            <span class="hidden sm:inline-block text-xs px-2 py-0.5 ml-1.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">AI-NATIVE</span>
+          </div>
+        </div>
+        
+        <!-- Tenant Context & RBAC (Tablet & Desktop) -->
+        <div class="hidden lg:flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-md border border-slate-700/50">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="font-medium text-slate-200" id="tenantName">Nexus Enterprise Ops</span>
+          <span class="text-slate-500">|</span>
+          <span class="text-indigo-400 font-mono font-semibold" id="userRole">OWNER</span>
+        </div>
+      </div>
+
+      <!-- Global Live Search -->
+      <div class="flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-2 sm:mx-6 relative">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="globalSearch" 
+            placeholder="Search accounts, leads, deals... (Press /)" 
+            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 sm:px-4 py-1.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+            oninput="handleSearch(this.value)"
+          >
+          <span class="hidden sm:inline-block absolute right-3 top-2 text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">⌘K</span>
+        </div>
+        <div id="searchResults" class="hidden absolute top-10 left-0 w-full bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto"></div>
+      </div>
+
+      <!-- User Profile, RBAC & Logout -->
+      <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+        <div class="hidden sm:flex items-center space-x-2 text-xs bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded border border-amber-500/20 cursor-pointer" onclick="switchView('approvals')">
+          <span class="font-semibold" id="pendingApprovalCount">1</span> <span class="hidden md:inline">Pending</span> Approval
+        </div>
+
+        <div class="flex items-center space-x-2 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1.5 rounded-xl">
+          <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-[10px]" id="userAvatar">
+            AM
+          </div>
+          <div class="text-left hidden xl:block">
+            <div class="font-medium text-slate-200 text-xs" id="navUserName">Alex Morgan</div>
+            <div class="text-[10px] text-indigo-400 font-mono" id="navUserRole">Role: OWNER</div>
+          </div>
+          <!-- Log Out Button -->
+          <button onclick="handleLogout()" class="ml-1 text-[11px] text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-700/50 transition" title="Log Out of Session">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="flex-1 flex overflow-hidden relative">
+      <!-- Sidebar -->
+      <aside id="appSidebar" class="fixed inset-y-0 left-0 z-50 w-72 md:w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between shrink-0 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
+        <div class="space-y-6 overflow-y-auto pr-1">
+          <div class="flex items-center justify-between md:hidden pb-3 border-b border-slate-800">
+            <div class="font-bold text-sm text-white">Menu</div>
+            <button onclick="toggleMobileSidebar()" class="p-1 rounded text-slate-400 hover:text-white">✕</button>
+          </div>
+
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-3">System of Action</div>
+            <nav class="space-y-1">
+              <button onclick="switchView('my-work')" id="nav-my-work" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white shadow-sm transition">
+                <span class="flex items-center space-x-2.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  <span>My Work</span>
+                </span>
+                <span class="text-xs bg-indigo-500 px-1.5 py-0.5 rounded-full font-mono" id="myWorkBadge">2</span>
+              </button>
+              <button onclick="switchView('approvals')" id="nav-approvals" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <span class="flex items-center space-x-2.5">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                  <span>AI Approvals</span>
+                </span>
+                <span class="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full font-mono" id="sidebarApprovalCount">1</span>
+              </button>
+              <button onclick="switchView('meeting-intelligence')" id="nav-meeting-intelligence" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                <span>Meeting Intelligence</span>
+              </button>
+            </nav>
+          </div>
+
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-3">System of Record</div>
+            <nav class="space-y-1">
+              <button onclick="switchView('accounts')" id="nav-accounts" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <span>Accounts</span>
+              </button>
+              <button onclick="switchView('contacts')" id="nav-contacts" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span>Contacts</span>
+              </button>
+              <button onclick="switchView('leads')" id="nav-leads" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                <span>Leads</span>
+              </button>
+              <button onclick="switchView('pipeline')" id="nav-pipeline" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Opportunities (Kanban)</span>
+              </button>
+            </nav>
+          </div>
+
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-3">System of Context</div>
+            <nav class="space-y-1">
+              <button onclick="switchView('timeline')" id="nav-timeline" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Unified Timeline</span>
+              </button>
+              <button onclick="switchView('audit')" id="nav-audit" class="w-full flex items-center space-x-2.5 px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Audit Log</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        <!-- Plan & Authorization Status -->
+        <div class="pt-4 border-t border-slate-800 text-xs text-slate-500 space-y-2 shrink-0">
+          <div class="flex items-center justify-between">
+            <span>Authorization:</span>
+            <span class="text-indigo-400 font-mono font-medium" id="sideRole">OWNER</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Tenant Isolation:</span>
+            <span class="text-emerald-400 font-mono font-medium">ENFORCED</span>
+          </div>
+          <button onclick="handleLogout()" class="w-full mt-2 text-[11px] text-rose-400 hover:text-rose-300 font-medium py-1.5 text-center bg-rose-950/20 hover:bg-rose-950/40 rounded-lg border border-rose-900/30 transition">
+            Sign Out of NexusOps
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-950/50 w-full" id="mainContent">
+        <!-- Injected via renderView() -->
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODALS & DETAIL DRAWERS                                         -->
+  <!-- ============================================================== -->
+
+  <!-- Generic Modal Backdrop -->
+  <div id="modalBackdrop" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div id="modalBox" class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto"></div>
+  </div>
+
+  <!-- Detail Slide-Over Drawer -->
+  <div id="drawerBackdrop" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex justify-end">
+    <div id="drawerBox" class="bg-slate-900 border-l border-slate-800 w-full max-w-full sm:max-w-xl h-full shadow-2xl p-5 sm:p-8 overflow-y-auto flex flex-col justify-between"></div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // Responsive Mobile Sidebar Toggle
+    // -------------------------------------------------------------
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+      if (isOpen) {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      } else {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Custom Luminous Ambient Pointer Implementation
+    // -------------------------------------------------------------
+    const dot = document.getElementById('nexusPointerDot');
+    const halo = document.getElementById('nexusPointerHalo');
+    let mouseX = -100, mouseY = -100;
+    let haloX = -100, haloY = -100;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      dot.style.left = `${mouseX}px`;
+      dot.style.top = `${mouseY}px`;
+    });
+
+    function animatePointer() {
+      haloX += (mouseX - haloX) * 0.18;
+      haloY += (mouseY - haloY) * 0.18;
+      halo.style.left = `${haloX}px`;
+      halo.style.top = `${haloY}px`;
+      requestAnimationFrame(animatePointer);
+    }
+    requestAnimationFrame(animatePointer);
+
+    document.addEventListener('mouseover', (e) => {
+      if (e.target.closest('button, a, input, select, textarea, tr, .cursor-pointer')) {
+        document.body.classList.add('is-hovering');
+      } else {
+        document.body.classList.remove('is-hovering');
+      }
+    });
+
+    // -------------------------------------------------------------
+    // Notification Toast System
+    // -------------------------------------------------------------
+    function showToast(title, message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const borderCol = type === 'success' 
+        ? 'border-emerald-500/40 bg-emerald-950/80 text-emerald-200' 
+        : type === 'error'
+        ? 'border-rose-500/40 bg-rose-950/90 text-rose-200'
+        : 'border-indigo-500/40 bg-slate-900/90 text-slate-200';
+
+      toast.className = `p-4 rounded-xl border ${borderCol} shadow-2xl text-xs max-w-sm backdrop-blur transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `
+        <div class="font-bold text-sm text-white mb-0.5">${title}</div>
+        <div>${message}</div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // -------------------------------------------------------------
+    // Application State Management
+    // -------------------------------------------------------------
+    const DEFAULT_DATA = {
+      workItems: [
+        {
+          id: 'act_1',
+          title: 'Emergency Customer Health Intervention (Health: 42%)',
+          type: 'CALL',
+          entityType: 'Account',
+          entityId: 'acc_3',
+          entityName: 'Vercel Cloud',
+          dueDate: '1 hour ago (OVERDUE)',
+          priorityScore: 95,
+          priorityTier: 'CRITICAL',
+          description: 'Vercel account health has dropped below 50. Inactivity detected over 14 days.',
+        },
+        {
+          id: 'act_2',
+          title: 'Deliver Custom SOC2 Security Addendum',
+          type: 'TASK',
+          entityType: 'Opportunity',
+          entityId: 'opp_1',
+          entityName: 'Stripe Connect AI Gateway Expansion ($380,000)',
+          dueDate: 'Due in 12 hours',
+          priorityScore: 78,
+          priorityTier: 'HIGH',
+          description: 'Procurement team requires revised data retention clauses before signing.',
+        }
+      ],
+      pendingApprovals: [
+        {
+          id: 'act_65f8cceb',
+          tool: 'crm.delete_account',
+          riskLevel: 'HIGH',
+          entity: 'Linear App (Account)',
+          reason: 'AI agent suggested archiving stale account due to account merge request.',
+          payload: { accountId: 'acc_2', organizationId: 'nexus_enterprise' }
+        }
+      ],
+      accounts: [
+        { id: 'acc_1', name: 'Stripe Global', tier: 'ENTERPRISE', healthScore: 94, industry: 'Financial Infrastructure', website: 'https://stripe.com' },
+        { id: 'acc_2', name: 'Linear App', tier: 'MID_MARKET', healthScore: 68, industry: 'Developer Tools', website: 'https://linear.app' },
+        { id: 'acc_3', name: 'Vercel Cloud', tier: 'ENTERPRISE', healthScore: 42, industry: 'Cloud Infrastructure', website: 'https://vercel.com' },
+      ],
+      contacts: [
+        { id: 'cnt_1', name: 'Patrick Collison', email: 'patrick@stripe.com', title: 'CEO', account: 'Stripe Global', accountId: 'acc_1', phone: '+1 (415) 555-0192' },
+        { id: 'cnt_2', name: 'Karri Saarinen', email: 'karri@linear.app', title: 'Head of Product', account: 'Linear App', accountId: 'acc_2', phone: '+1 (415) 555-0814' },
+      ],
+      leads: [
+        { id: 'lead_1', name: 'Guillermo Rauch', email: 'guillermo@vercel.com', company: 'Next.js Systems', score: 85, status: 'QUALIFIED' },
+      ],
+      opportunities: [
+        { id: 'opp_1', title: 'Stripe Connect AI Gateway Expansion', value: '$380,000', stage: 'Proposal', probability: '75%', accountId: 'acc_1' },
+        { id: 'opp_2', title: 'Edge Deployment Security SLA', value: '$145,000', stage: 'Security Review', probability: '50%', accountId: 'acc_3' },
+        { id: 'opp_3', title: 'Linear Developer Sync Add-on', value: '$45,000', stage: 'Discovery', probability: '25%', accountId: 'acc_2' },
+      ],
+      pipelineStages: ['Discovery', 'Security Review', 'Proposal', 'Contract Review', 'Closed Won'],
+      timeline: [
+        { time: '10 mins ago', type: 'STAGE_CHANGED', summary: "Opportunity 'Stripe Connect AI Gateway' moved to Proposal (75% probability)" },
+        { time: '1 hour ago', type: 'LEAD_QUALIFIED', summary: "Lead 'Guillermo Rauch' qualified with score 85" },
+        { time: '2 hours ago', type: 'ACCOUNT_CREATED', summary: "Account 'Stripe Global' was provisioned under Enterprise tier" },
+      ],
+      auditLogs: [
+        { time: 'Just now', action: 'AI_ACTION_APPROVAL_REQUIRED', entity: 'AiAction', user: 'Alex Morgan' },
+        { time: '10 mins ago', action: 'OPPORTUNITY_STAGE_CHANGED', entity: 'Opportunity', user: 'Alex Morgan' },
+        { time: '1 hour ago', action: 'LEAD_QUALIFIED', entity: 'Lead', user: 'Alex Morgan' },
+        { time: '2 hours ago', action: 'ORG_CREATED', entity: 'Organization', user: 'Alex Morgan' },
+      ],
+      meetingNotes: `Customer Meeting with Acme Corp
+Discussion Points:
+- Client confirmed budget of $120,000 approved for Q4.
+- Security team requested SOC2 Type II report and SSO configuration guide.
+Action: Deliver custom SOC2 compliance addendum by Wednesday.
+Action: Schedule technical onboarding demo with CTO.
+Sentiment: Positive momentum, ready to sign upon security sign-off.`
+    };
+
+    function loadState() {
+      const saved = localStorage.getItem('nexus_state_v3');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return DEFAULT_DATA;
+        }
+      }
+      return DEFAULT_DATA;
+    }
+
+    let dataState = loadState();
+
+    function saveState() {
+      localStorage.setItem('nexus_state_v3', JSON.stringify(dataState));
+      updateHeaderProfile();
+    }
+
+    // -------------------------------------------------------------
+    // Authentication & Authorization Session Management
+    // -------------------------------------------------------------
+    function getCurrentUser() {
+      const session = localStorage.getItem('nexus_auth_user');
+      if (session) {
+        try {
+          return JSON.parse(session);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    function setCurrentUser(user) {
+      if (user) {
+        localStorage.setItem('nexus_auth_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('nexus_auth_user');
+      }
+    }
+
+
+    // -------------------------------------------------------------
+    // REST API Integration Client (Connected to Node Backend)
+    // -------------------------------------------------------------
+    async function apiCall(endpoint, method = 'GET', body = null) {
+      if (window.location.protocol === 'file:') return null;
+      const token = localStorage.getItem('nexus_jwt_token');
+      const orgId = localStorage.getItem('nexus_org_id') || 'org_demo_1';
+      try {
+        const res = await fetch(`/api/v1${endpoint}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            'X-Organization-Id': orgId,
+          },
+          body: body ? JSON.stringify(body) : null,
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+        }
+        return await res.json();
+      } catch (err) {
+        console.warn(`[Nexus API Client] ${method} ${endpoint} fallback:`, err.message);
+        return null;
+      }
+    }
+
+    async function syncBackendData() {
+      if (window.location.protocol === 'file:') return;
+      const token = localStorage.getItem('nexus_jwt_token');
+      if (!token) return;
+
+      try {
+        const [accRes, leadRes, workRes, actionRes, billRes] = await Promise.all([
+          apiCall('/accounts'),
+          apiCall('/leads'),
+          apiCall('/work-queue'),
+          apiCall('/ai/actions'),
+          apiCall('/billing'),
+        ]);
+
+        if (accRes?.data && accRes.data.length > 0) {
+          dataState.accounts = accRes.data;
+        }
+        if (leadRes?.data && leadRes.data.length > 0) {
+          dataState.leads = leadRes.data;
+        }
+        if (workRes?.data && workRes.data.length > 0) {
+          dataState.workItems = workRes.data;
+        }
+        if (actionRes?.data) {
+          dataState.pendingApprovals = actionRes.data;
+          const countEl1 = document.getElementById('pendingApprovalCount');
+          const countEl2 = document.getElementById('sidebarApprovalCount');
+          if (countEl1) countEl1.textContent = actionRes.data.length;
+          if (countEl2) countEl2.textContent = actionRes.data.length;
+        }
+        if (billRes?.data) {
+          dataState.billing = billRes.data;
+        }
+        renderView();
+      } catch (e) {
+        console.warn('[Sync Error]', e);
+      }
+    }
+
+    function checkAuth() {
+      const user = getCurrentUser();
+      const authScreen = document.getElementById('authScreen');
+      const appContainer = document.getElementById('appContainer');
+
+      if (!user) {
+        authScreen.classList.remove('hidden');
+        appContainer.classList.add('hidden');
+      } else {
+        authScreen.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        updateHeaderProfile();
+        renderView();
+        syncBackendData();
+      }
+    }
+
+    function switchAuthMode(mode) {
+      const tabLogin = document.getElementById('tabLogin');
+      const tabSignup = document.getElementById('tabSignup');
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+
+      if (mode === 'login') {
+        tabLogin.className = "py-2 rounded-lg bg-indigo-600 text-white transition shadow-sm";
+        tabSignup.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+      } else {
+        tabSignup.className = "py-2 rounded-lg bg-indigo-600 text-white transition shadow-sm";
+        tabLogin.className = "py-2 rounded-lg text-slate-400 hover:text-white transition";
+        signupForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      }
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      if (!pass || pass.length < 6) {
+        showToast('Authentication Error', 'Password must be at least 6 characters.', 'error');
+        return;
+      }
+
+      // Check registered users in storage
+      const registeredUsers = JSON.parse(localStorage.getItem('nexus_registered_users') || '[]');
+      const matched = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      const user = matched || {
+        name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        email,
+        organization: 'Nexus Enterprise Ops',
+        role: 'OWNER'
+      };
+
+      apiCall('/auth/login', 'POST', { email, password }).then(res => {
+        if (res?.data?.token) {
+          localStorage.setItem('nexus_jwt_token', res.data.token);
+          syncBackendData();
+        }
+      }).catch(() => {});
+      setCurrentUser(user);
+      showToast('Authenticated', `Welcome back, ${user.name}! Role: ${user.role}`);
+      checkAuth();
+    }
+
+    function handleSignupSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const organization = document.getElementById('signupOrg').value.trim();
+      const role = document.getElementById('signupRole').value;
+
+      const newUser = { name, email, organization, role };
+
+      // Save to registered users pool
+      const registeredUsers = JSON.parse(localStorage.getItem('nexus_registered_users') || '[]');
+      registeredUsers.push(newUser);
+      localStorage.setItem('nexus_registered_users', JSON.stringify(registeredUsers));
+
+      // Personalize workspace
+      dataState.workItems.unshift({
+        id: `act_${Date.now()}`,
+        title: `Welcome ${name}! Review and set up your ${organization} workspace`,
+        type: 'TASK',
+        entityType: 'Account',
+        entityId: 'acc_1',
+        entityName: organization,
+        dueDate: 'Due Today',
+        priorityScore: 94,
+        priorityTier: 'CRITICAL',
+        description: `Dedicated workspace provisioned for ${name} (${role}) under tenant '${organization}'.`,
+      });
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'USER_REGISTERED',
+        summary: `User '${name}' registered with role ${role} for organization '${organization}'.`
+      });
+
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'USER_REGISTERED',
+        entity: 'User',
+        user: name
+      });
+
+      apiCall('/auth/register', 'POST', { name, email, password: 'Password1234!' }).then(regRes => {
+        if (regRes?.data?.id) {
+          apiCall('/auth/login', 'POST', { email, password: 'Password1234!' }).then(loginRes => {
+            if (loginRes?.data?.token) {
+              localStorage.setItem('nexus_jwt_token', loginRes.data.token);
+              syncBackendData();
+            }
+          });
+        }
+      }).catch(() => {});
+      saveState();
+      setCurrentUser(newUser);
+      showToast('Account Created!', `Workspace created for ${organization}. Initialized with ${role} permissions.`);
+      checkAuth();
+    }
+
+    function quickLogin(email, name, organization, role) {
+      const user = { email, name, organization, role };
+      setCurrentUser(user);
+      showToast('Demo Login Active', `Signed in as ${name} (${role}).`);
+      checkAuth();
+    }
+
+    function handleLogout() {
+      const user = getCurrentUser();
+      if (user) {
+        dataState.auditLogs.unshift({
+          time: 'Just now',
+          action: 'USER_LOGOUT',
+          entity: 'Session',
+          user: user.name
+        });
+        saveState();
+      }
+      setCurrentUser(null);
+      showToast('Signed Out', 'Your session has been terminated safely.');
+      checkAuth();
+    }
+
+    // -------------------------------------------------------------
+    // Authorization Check Helper
+    // -------------------------------------------------------------
+    function assertUserPermission(actionName) {
+      const user = getCurrentUser();
+      if (!user) return false;
+
+      // VIEWER role is read-only
+      if (user.role === 'VIEWER') {
+        showToast('Access Denied', `Role 'VIEWER' is not authorized to ${actionName}. Switch to OWNER or ADMIN to execute mutations.`, 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function updateHeaderProfile() {
+      const user = getCurrentUser() || { name: 'Alex Morgan', role: 'OWNER', organization: 'Nexus Enterprise Ops' };
+      document.getElementById('tenantName').textContent = user.organization;
+      document.getElementById('userRole').textContent = user.role;
+      document.getElementById('sideRole').textContent = user.role;
+      document.getElementById('navUserName').textContent = user.name;
+      document.getElementById('navUserRole').textContent = `Role: ${user.role}`;
+      const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      document.getElementById('userAvatar').textContent = initials;
+    }
+
+    let currentView = 'my-work';
+
+    // -------------------------------------------------------------
+    // View Rendering Router
+    // -------------------------------------------------------------
+    function renderView() {
+      const container = document.getElementById('mainContent');
+      updateHeaderProfile();
+
+      if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('appSidebar');
+        const backdrop = document.getElementById('mobileSidebarBackdrop');
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+
+      ['my-work', 'approvals', 'meeting-intelligence', 'accounts', 'contacts', 'leads', 'pipeline', 'timeline', 'audit'].forEach(view => {
+        const btn = document.getElementById(`nav-${view}`);
+        if (btn) {
+          if (view === currentView) {
+            btn.className = "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white shadow-sm transition";
+          } else {
+            btn.className = "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition";
+          }
+        }
+      });
+
+      if (currentView === 'my-work') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Command Center — My Work</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Dynamic priority ranking calculated from business impact, deadlines, and customer health risk.</p>
+              </div>
+              <div class="flex space-x-2 shrink-0">
+                <button onclick="openAddTaskModal()" class="px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">+ Add Task</button>
+              </div>
+            </div>
+
+            <!-- Priority Queue Cards -->
+            <div class="space-y-4">
+              ${dataState.workItems.map((item) => `
+                <div class="p-4 sm:p-5 rounded-xl bg-slate-900 border ${item.priorityTier === 'CRITICAL' ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800'} transition hover:border-slate-700">
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="space-y-1.5">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                          item.priorityTier === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        }">PRIORITY ${item.priorityScore} • ${item.priorityTier}</span>
+                        <span class="text-xs text-slate-400 font-medium">${item.entityType}: <strong class="text-slate-200 cursor-pointer hover:underline" onclick="openEntityDetail('${item.entityType}', '${item.entityId}')">${item.entityName}</strong></span>
+                        <span class="text-xs text-rose-400 font-mono font-semibold">${item.dueDate}</span>
+                      </div>
+                      <h2 class="text-sm sm:text-base font-semibold text-white cursor-pointer hover:text-indigo-300 transition" onclick="openEntityDetail('${item.entityType}', '${item.entityId}')">${item.title}</h2>
+                      <p class="text-xs sm:text-sm text-slate-400">${item.description}</p>
+                    </div>
+                    <div class="flex items-center shrink-0">
+                      <button onclick="resolveWorkItem('${item.id}')" class="w-full sm:w-auto px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">Mark Complete</button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+              ${dataState.workItems.length === 0 ? `
+                <div class="p-8 sm:p-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                  All high-priority items resolved. Click <strong>+ Add Task</strong> above to schedule an action item!
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'approvals') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">AI Action Gateway — Approval Queue</h1>
+              <p class="text-xs sm:text-sm text-slate-400">High-risk, financial, or destructive mutations require explicit human review before execution.</p>
+            </div>
+
+            <div class="space-y-4">
+              ${dataState.pendingApprovals.map(action => `
+                <div class="p-4 sm:p-5 rounded-xl bg-slate-900 border border-amber-500/30 bg-amber-950/10 space-y-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">RISK: ${action.riskLevel}</span>
+                      <span class="font-mono text-xs sm:text-sm text-amber-200">${action.tool}</span>
+                      <span class="text-xs text-slate-400">Target: <strong class="text-white">${action.entity}</strong></span>
+                    </div>
+                    <div class="text-[10px] sm:text-xs font-mono text-slate-500">ID: ${action.id}</div>
+                  </div>
+                  <p class="text-xs sm:text-sm text-slate-300">${action.reason}</p>
+                  <div class="p-3 bg-slate-950 rounded-lg text-xs font-mono text-slate-400 border border-slate-800 overflow-x-auto">
+                    Input: ${JSON.stringify(action.payload)}
+                  </div>
+                  <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                    <button onclick="rejectAction('${action.id}')" class="px-3.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md font-medium transition border border-slate-700">Reject Action</button>
+                    <button onclick="approveAction('${action.id}')" class="px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-md font-medium transition shadow-sm">Authorize & Execute</button>
+                  </div>
+                </div>
+              `).join('')}
+              ${dataState.pendingApprovals.length === 0 ? `
+                <div class="p-8 sm:p-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                  No actions currently waiting for human approval. System is operating safely.
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'meeting-intelligence') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">AI Meeting Intelligence & Action Extraction</h1>
+              <p class="text-xs sm:text-sm text-slate-400">Paste call transcripts or notes to automatically extract sentiment, commitments, and generate tasks.</p>
+            </div>
+
+            <div class="p-4 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
+              <label class="block text-xs font-mono text-slate-400">RAW CALL TRANSCRIPT / NOTES</label>
+              <textarea id="meetingTranscriptInput" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 sm:p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">${dataState.meetingNotes}</textarea>
+              <div class="flex justify-end">
+                <button onclick="analyzeMeetingTranscript()" class="w-full sm:w-auto px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">
+                  Run AI Intelligence Analysis →
+                </button>
+              </div>
+            </div>
+
+            <div id="meetingResultSection" class="p-4 sm:p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-white">Latest Analysis Status</h3>
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300">SENTIMENT: POSITIVE</span>
+              </div>
+              <div class="text-xs text-slate-400 space-y-2">
+                <div><strong>Extracted Commitments:</strong></div>
+                <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                  <li>Deliver custom SOC2 compliance addendum by Wednesday.</li>
+                  <li>Schedule technical onboarding demo with CTO.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'accounts') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Accounts</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Enterprise and mid-market customer accounts. Click any account to open its 360 profile.</p>
+              </div>
+              <div class="flex space-x-2 shrink-0">
+                <button onclick="openAddAccountModal()" class="px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">+ Add Account</button>
+              </div>
+            </div>
+            <div class="overflow-x-auto border border-slate-800 rounded-xl bg-slate-900">
+              <table class="w-full text-left text-sm text-slate-300 min-w-[620px]">
+                <thead class="bg-slate-950/80 text-xs uppercase font-mono text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th class="p-4">Name</th>
+                    <th class="p-4">Tier</th>
+                    <th class="p-4">Industry</th>
+                    <th class="p-4">Customer Health</th>
+                    <th class="p-4 text-right">360 View</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  ${dataState.accounts.map(acc => `
+                    <tr class="hover:bg-slate-800/40 transition cursor-pointer" onclick="openAccountDrawer('${acc.id}')">
+                      <td class="p-4 font-semibold text-white flex items-center space-x-2">
+                        <span>${acc.name}</span>
+                        ${acc.website ? `<span class="hidden sm:inline text-[10px] text-slate-500 font-mono">(${acc.website})</span>` : ''}
+                      </td>
+                      <td class="p-4"><span class="px-2 py-0.5 rounded text-xs font-mono font-medium bg-slate-800 text-indigo-300">${acc.tier}</span></td>
+                      <td class="p-4 text-slate-400">${acc.industry}</td>
+                      <td class="p-4">
+                        <div class="flex items-center space-x-2">
+                          <span class="font-mono font-bold ${acc.healthScore < 50 ? 'text-rose-400' : acc.healthScore < 75 ? 'text-amber-400' : 'text-emerald-400'}">${acc.healthScore}%</span>
+                          <div class="w-16 sm:w-20 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="${acc.healthScore < 50 ? 'bg-rose-500' : acc.healthScore < 75 ? 'bg-amber-500' : 'bg-emerald-500'} h-full" style="width: ${acc.healthScore}%"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="p-4 text-right text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                        Open 360 Drawer →
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'contacts') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Contacts</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Decision makers and champions across customer accounts.</p>
+              </div>
+              <button onclick="openAddContactModal()" class="w-full sm:w-auto px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">+ Add Contact</button>
+            </div>
+            <div class="overflow-x-auto border border-slate-800 rounded-xl bg-slate-900">
+              <table class="w-full text-left text-sm text-slate-300 min-w-[620px]">
+                <thead class="bg-slate-950/80 text-xs uppercase font-mono text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th class="p-4">Name</th>
+                    <th class="p-4">Title</th>
+                    <th class="p-4">Account</th>
+                    <th class="p-4">Email</th>
+                    <th class="p-4">Phone</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  ${dataState.contacts.map(c => `
+                    <tr class="hover:bg-slate-800/40 transition">
+                      <td class="p-4 font-semibold text-white">${c.name}</td>
+                      <td class="p-4 text-slate-300">${c.title}</td>
+                      <td class="p-4 text-indigo-400 font-medium">${c.account}</td>
+                      <td class="p-4 font-mono text-xs text-slate-400">${c.email}</td>
+                      <td class="p-4 font-mono text-xs text-slate-400">${c.phone || '—'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'leads') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Leads & Inbound Signals</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Automated lead qualification and one-click atomic conversion into CRM records.</p>
+              </div>
+              <button onclick="openAddLeadModal()" class="w-full sm:w-auto px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">+ Create Lead</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${dataState.leads.map(lead => `
+                <div class="p-4 sm:p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SCORE: ${lead.score} • ${lead.status}</span>
+                    <span class="text-xs text-slate-500">Inbound Signal</span>
+                  </div>
+                  <div>
+                    <h3 class="text-base sm:text-lg font-semibold text-white">${lead.name}</h3>
+                    <p class="text-xs sm:text-sm text-slate-400">${lead.company} • ${lead.email}</p>
+                  </div>
+                  <div class="pt-2 border-t border-slate-800 flex justify-end">
+                    <button onclick="convertLead('${lead.id}')" class="w-full sm:w-auto px-3.5 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-md font-medium transition shadow-sm">Convert to Account & Deal →</button>
+                  </div>
+                </div>
+              `).join('')}
+              ${dataState.leads.length === 0 ? `
+                <div class="p-8 sm:p-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl col-span-2">
+                  No pending leads. Click <strong>+ Create Lead</strong> above to test!
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'pipeline') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Sales Pipeline — Enterprise Kanban</h1>
+                <p class="text-xs sm:text-sm text-slate-400">Click any deal to inspect or advance.</p>
+              </div>
+              <button onclick="openAddOpportunityModal()" class="w-full sm:w-auto px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm">+ Add Deal</button>
+            </div>
+            
+            <div class="flex space-x-4 overflow-x-auto pb-4 pt-1 snap-x">
+              ${dataState.pipelineStages.map(stage => {
+                const stageOpps = dataState.opportunities.filter(o => o.stage === stage);
+                return `
+                  <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 sm:p-4 flex flex-col w-72 shrink-0 snap-start">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                      <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">${stage}</span>
+                      <span class="text-[10px] font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${stageOpps.length}</span>
+                    </div>
+                    <div class="space-y-3 flex-1">
+                      ${stageOpps.map(opp => `
+                        <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2 hover:border-indigo-500/50 transition cursor-pointer" onclick="openOpportunityDrawer('${opp.id}')">
+                          <div class="text-xs font-semibold text-white leading-tight">${opp.title}</div>
+                          <div class="text-sm font-mono font-bold text-emerald-400">${opp.value}</div>
+                          <div class="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px]">
+                            <span class="text-slate-500 font-mono">${opp.probability}</span>
+                            <button onclick="event.stopPropagation(); advanceKanbanDeal('${opp.id}')" class="text-indigo-400 hover:underline">Advance →</button>
+                          </div>
+                        </div>
+                      `).join('')}
+                      ${stageOpps.length === 0 ? `
+                        <div class="h-20 flex items-center justify-center text-[11px] text-slate-600 border border-dashed border-slate-800/60 rounded">Empty stage</div>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'timeline') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Unified Customer Timeline</h1>
+              <p class="text-xs sm:text-sm text-slate-400">Aggregated real-time chronological event feed across business activities, stage transitions, and AI recommendations.</p>
+            </div>
+            <div class="space-y-3 pl-3 sm:pl-4 border-l-2 border-slate-800">
+              ${dataState.timeline.map(t => `
+                <div class="relative pl-5 sm:pl-6">
+                  <div class="absolute -left-[23px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full bg-indigo-500 border-2 border-slate-950"></div>
+                  <div class="text-[11px] sm:text-xs text-slate-500 font-mono">${t.time} • <span class="text-indigo-400 font-semibold">${t.type}</span></div>
+                  <p class="text-xs sm:text-sm text-slate-200 mt-0.5">${t.summary}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'audit') {
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Immutable Audit Log</h1>
+              <p class="text-xs sm:text-sm text-slate-400">Cryptographically verifiable, tenant-isolated record of all actions, approvals, and mutations.</p>
+            </div>
+            <div class="overflow-x-auto border border-slate-800 rounded-xl bg-slate-900">
+              <table class="w-full text-left text-sm text-slate-300 min-w-[580px]">
+                <thead class="bg-slate-950/80 text-xs uppercase font-mono text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th class="p-3 sm:p-4">Timestamp</th>
+                    <th class="p-3 sm:p-4">Action</th>
+                    <th class="p-3 sm:p-4">Entity Type</th>
+                    <th class="p-3 sm:p-4">Operator</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 font-mono text-xs">
+                  ${dataState.auditLogs.map(l => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="p-3 sm:p-4 text-slate-500">${l.time}</td>
+                      <td class="p-3 sm:p-4 text-indigo-300 font-bold">${l.action}</td>
+                      <td class="p-3 sm:p-4 text-slate-400">${l.entity}</td>
+                      <td class="p-3 sm:p-4 text-slate-300">${l.user}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function switchView(view) {
+      currentView = view;
+      renderView();
+    }
+
+    // -------------------------------------------------------------
+    // Interactive Business Actions with Authorization Checks
+    // -------------------------------------------------------------
+    function resolveWorkItem(id) {
+      const item = dataState.workItems.find(i => i.id === id);
+      const user = getCurrentUser();
+      dataState.workItems = dataState.workItems.filter(i => i.id !== id);
+      document.getElementById('myWorkBadge').textContent = dataState.workItems.length;
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'ACTIVITY_COMPLETED',
+        summary: `Resolved task: "${item ? item.title : 'Work item'}" by ${user.name}.`
+      });
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'TASK_COMPLETED',
+        entity: 'Activity',
+        user: user.name
+      });
+      saveState();
+      showToast('Task Completed', 'Item resolved and recorded on the unified timeline.');
+      renderView();
+    }
+
+    function approveAction(id) {
+      // Authorization Guard: Only OWNER or ADMIN can approve high risk AI actions
+      if (!assertUserPermission('authorize high-risk AI actions')) return;
+
+      const user = getCurrentUser();
+      const action = dataState.pendingApprovals.find(a => a.id === id);
+      dataState.pendingApprovals = dataState.pendingApprovals.filter(a => a.id !== id);
+      if (action && action.payload && action.payload.accountId) {
+        dataState.accounts = dataState.accounts.filter(a => a.id !== action.payload.accountId);
+      }
+      document.getElementById('pendingApprovalCount').textContent = dataState.pendingApprovals.length;
+      document.getElementById('sidebarApprovalCount').textContent = dataState.pendingApprovals.length;
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'AI_ACTION_APPROVED_AND_EXECUTED',
+        entity: 'AiAction',
+        user: user.name
+      });
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'ACCOUNT_DELETED',
+        summary: `Action '${action ? action.tool : 'Mutation'}' authorized by ${user.name}. Account deleted safely.`
+      });
+      apiCall('/ai/actions/' + id + '/approve', 'POST').catch(err => console.warn(err));
+      saveState();
+      showToast('AI Action Approved', 'Action successfully authorized and executed.');
+      renderView();
+    }
+
+    function rejectAction(id) {
+      if (!assertUserPermission('reject AI actions')) return;
+      const user = getCurrentUser();
+      const action = dataState.pendingApprovals.find(a => a.id === id);
+      dataState.pendingApprovals = dataState.pendingApprovals.filter(a => a.id !== id);
+      document.getElementById('pendingApprovalCount').textContent = dataState.pendingApprovals.length;
+      document.getElementById('sidebarApprovalCount').textContent = dataState.pendingApprovals.length;
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'AI_ACTION_REJECTED',
+        entity: 'AiAction',
+        user: user.name
+      });
+      saveState();
+      showToast('AI Action Rejected', 'Mutation was blocked by human operator.');
+      renderView();
+    }
+
+    function convertLead(leadId) {
+      if (!assertUserPermission('convert leads')) return;
+      const user = getCurrentUser();
+      const lead = dataState.leads.find(l => l.id === leadId);
+      if (!lead) return;
+      dataState.leads = dataState.leads.filter(l => l.id !== leadId);
+      
+      const newAcc = {
+        id: `acc_${Date.now()}`,
+        name: lead.company,
+        tier: 'SMB',
+        healthScore: 100,
+        industry: 'Inbound Growth'
+      };
+      dataState.accounts.push(newAcc);
+
+      const newContact = {
+        id: `cnt_${Date.now()}`,
+        name: lead.name,
+        email: lead.email,
+        title: 'Key Contact',
+        account: lead.company,
+        accountId: newAcc.id
+      };
+      dataState.contacts.push(newContact);
+
+      const newOpp = {
+        id: `opp_${Date.now()}`,
+        title: `${lead.company} Contract`,
+        value: '$65,000',
+        stage: 'Discovery',
+        probability: '25%',
+        accountId: newAcc.id
+      };
+      dataState.opportunities.push(newOpp);
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'LEAD_CONVERTED',
+        summary: `Lead '${lead.name}' converted into Account '${lead.company}' and new Opportunity ($65,000).`
+      });
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'LEAD_CONVERTED',
+        entity: 'Lead',
+        user: user.name
+      });
+      saveState();
+      showToast('Lead Converted!', `Created Account '${lead.company}' and Sales Deal in a single atomic transaction.`);
+      renderView();
+    }
+
+    function advanceKanbanDeal(oppId) {
+      if (!assertUserPermission('advance sales deals')) return;
+      const user = getCurrentUser();
+      const opp = dataState.opportunities.find(o => o.id === oppId);
+      if (!opp) return;
+
+      const currentIndex = dataState.pipelineStages.indexOf(opp.stage);
+      if (currentIndex < dataState.pipelineStages.length - 1) {
+        opp.stage = dataState.pipelineStages[currentIndex + 1];
+        if (opp.stage === 'Closed Won') opp.probability = '100%';
+        else if (opp.stage === 'Contract Review') opp.probability = '90%';
+        else if (opp.stage === 'Proposal') opp.probability = '75%';
+
+        dataState.timeline.unshift({
+          time: 'Just now',
+          type: 'STAGE_CHANGED',
+          summary: `Opportunity '${opp.title}' advanced to ${opp.stage}!`
+        });
+        dataState.auditLogs.unshift({
+          time: 'Just now',
+          action: 'OPPORTUNITY_STAGE_ADVANCED',
+          entity: 'Opportunity',
+          user: user.name
+        });
+        saveState();
+        showToast('Deal Advanced', `'${opp.title}' is now in ${opp.stage}.`);
+        renderView();
+      }
+    }
+
+    function analyzeMeetingTranscript() {
+      if (!assertUserPermission('run AI intelligence extraction')) return;
+      const input = document.getElementById('meetingTranscriptInput').value;
+      dataState.meetingNotes = input;
+      dataState.workItems.unshift({
+        id: `act_${Date.now()}`,
+        title: 'Deliver custom SOC2 compliance addendum',
+        type: 'TASK',
+        entityType: 'Account',
+        entityName: 'Acme Corp',
+        dueDate: 'Due in 48 hours',
+        priorityScore: 88,
+        priorityTier: 'CRITICAL',
+        description: 'Extracted automatically from meeting discussion with Acme Corp.',
+      });
+      document.getElementById('myWorkBadge').textContent = dataState.workItems.length;
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'MEETING_INTELLIGENCE_PROCESSED',
+        summary: `Meeting notes parsed by AI: Sentiment POSITIVE. 2 new follow-up tasks provisioned.`
+      });
+      saveState();
+      showToast('AI Analysis Complete', 'Extracted 2 action items and scheduled priority tasks in My Work.');
+      renderView();
+    }
+
+    // -------------------------------------------------------------
+    // Deep Detail Drawers
+    // -------------------------------------------------------------
+    function openAccountDrawer(accountId) {
+      const acc = dataState.accounts.find(a => a.id === accountId);
+      if (!acc) return;
+
+      const linkedContacts = dataState.contacts.filter(c => c.accountId === acc.id || c.account === acc.name);
+      const linkedOpps = dataState.opportunities.filter(o => o.accountId === acc.id || o.title.includes(acc.name.split(' ')[0]));
+      const linkedTasks = dataState.workItems.filter(w => w.entityName === acc.name || w.entityId === acc.id);
+
+      const drawer = document.getElementById('drawerBox');
+      drawer.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <span class="text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider">${acc.tier} ACCOUNT</span>
+              <h2 class="text-xl sm:text-2xl font-bold text-white mt-1">${acc.name}</h2>
+              <div class="text-xs text-slate-400 mt-0.5">${acc.industry} • <a href="${acc.website || '#'}" target="_blank" class="text-indigo-400 hover:underline">${acc.website || 'No website'}</a></div>
+            </div>
+            <button onclick="closeDrawer()" class="text-slate-500 hover:text-white p-2 rounded-lg bg-slate-800/60">✕</button>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-medium">Customer Health Score</span>
+              <span class="font-mono font-bold ${acc.healthScore < 50 ? 'text-rose-400' : acc.healthScore < 75 ? 'text-amber-400' : 'text-emerald-400'}">${acc.healthScore} / 100</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+              <div class="${acc.healthScore < 50 ? 'bg-rose-500' : acc.healthScore < 75 ? 'bg-amber-500' : 'bg-emerald-500'} h-full transition-all duration-500" style="width: ${acc.healthScore}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-500">${acc.healthScore < 50 ? '⚠️ High risk of churn. Immediate intervention required.' : 'Healthy enterprise account with active platform signals.'}</p>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-sm font-semibold text-white">Contacts (${linkedContacts.length})</h3>
+            <div class="space-y-2">
+              ${linkedContacts.map(c => `
+                <div class="p-3 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
+                  <div>
+                    <div class="font-semibold text-white">${c.name}</div>
+                    <div class="text-slate-400">${c.title} • ${c.email}</div>
+                  </div>
+                  <span class="text-indigo-400 font-mono text-[10px]">${c.phone || 'Verified'}</span>
+                </div>
+              `).join('')}
+              ${linkedContacts.length === 0 ? `<div class="text-xs text-slate-500 italic p-3 bg-slate-950 rounded">No contacts linked.</div>` : ''}
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-sm font-semibold text-white">Deals & Opportunities (${linkedOpps.length})</h3>
+            <div class="space-y-2">
+              ${linkedOpps.map(o => `
+                <div class="p-3 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
+                  <div>
+                    <div class="font-semibold text-white">${o.title}</div>
+                    <div class="text-emerald-400 font-mono font-bold">${o.value} • ${o.stage}</div>
+                  </div>
+                  <span class="text-indigo-400 font-mono text-[10px]">${o.probability} win prob.</span>
+                </div>
+              `).join('')}
+              ${linkedOpps.length === 0 ? `<div class="text-xs text-slate-500 italic p-3 bg-slate-950 rounded">No active deals.</div>` : ''}
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-sm font-semibold text-white">Attention Tasks (${linkedTasks.length})</h3>
+            <div class="space-y-2">
+              ${linkedTasks.map(t => `
+                <div class="p-3 rounded-lg bg-slate-950 border border-slate-800/80 text-xs space-y-1">
+                  <div class="flex justify-between font-semibold text-white">
+                    <span>${t.title}</span>
+                    <span class="text-rose-400 font-mono">${t.dueDate}</span>
+                  </div>
+                  <p class="text-slate-400 text-[11px]">${t.description}</p>
+                </div>
+              `).join('')}
+              ${linkedTasks.length === 0 ? `<div class="text-xs text-slate-500 italic p-3 bg-slate-950 rounded">No pending tasks for this account.</div>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-800 flex justify-between items-center gap-2">
+          <button onclick="closeDrawer()" class="px-4 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition">Close Drawer</button>
+          <button onclick="promptQuickTask('${acc.name}', '${acc.id}')" class="px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition shadow-sm">+ Add Action Task</button>
+        </div>
+      `;
+
+      document.getElementById('drawerBackdrop').classList.remove('hidden');
+    }
+
+    function openOpportunityDrawer(oppId) {
+      const opp = dataState.opportunities.find(o => o.id === oppId);
+      if (!opp) return;
+
+      const drawer = document.getElementById('drawerBox');
+      drawer.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <span class="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">OPPORTUNITY DETAILS</span>
+              <h2 class="text-xl sm:text-2xl font-bold text-white mt-1">${opp.title}</h2>
+              <div class="text-sm font-mono text-emerald-400 font-bold mt-1">${opp.value}</div>
+            </div>
+            <button onclick="closeDrawer()" class="text-slate-500 hover:text-white p-2 rounded-lg bg-slate-800/60">✕</button>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+            <label class="block text-xs font-semibold text-slate-400">Current Sales Stage</label>
+            <select id="stageSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+              ${dataState.pipelineStages.map(s => `<option value="${s}" ${s === opp.stage ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+            <div class="flex justify-between items-center text-xs text-slate-400 pt-2">
+              <span>Estimated Win Probability:</span>
+              <span class="font-mono font-bold text-indigo-300">${opp.probability}</span>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-400">
+            <div><strong>Target Close Date:</strong> Q4 2026</div>
+            <div><strong>Currency:</strong> USD ($)</div>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-800 flex justify-between items-center gap-2">
+          <button onclick="closeDrawer()" class="px-4 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition">Cancel</button>
+          <button onclick="updateDealStage('${opp.id}')" class="px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition shadow-sm">Save Stage Change</button>
+        </div>
+      `;
+
+      document.getElementById('drawerBackdrop').classList.remove('hidden');
+    }
+
+    function updateDealStage(oppId) {
+      if (!assertUserPermission('update opportunity stages')) return;
+      const opp = dataState.opportunities.find(o => o.id === oppId);
+      const newStage = document.getElementById('stageSelect').value;
+      if (opp && newStage) {
+        opp.stage = newStage;
+        if (newStage === 'Closed Won') opp.probability = '100%';
+        else if (newStage === 'Contract Review') opp.probability = '90%';
+        else if (newStage === 'Proposal') opp.probability = '75%';
+        else if (newStage === 'Security Review') opp.probability = '50%';
+        else opp.probability = '25%';
+
+        dataState.timeline.unshift({
+          time: 'Just now',
+          type: 'STAGE_CHANGED',
+          summary: `Opportunity '${opp.title}' updated to stage '${newStage}'.`
+        });
+        saveState();
+        closeDrawer();
+        showToast('Deal Updated', `Moved to ${newStage} successfully.`);
+        renderView();
+      }
+    }
+
+    function openEntityDetail(type, id) {
+      if (type === 'Account') {
+        openAccountDrawer(id);
+      } else if (type === 'Opportunity') {
+        openOpportunityDrawer(id);
+      } else {
+        showToast('Entity Detail', `Opening context view for ${type}`);
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerBackdrop').classList.add('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------
+    // Add Entity Modals
+    // -------------------------------------------------------------
+    function openAddAccountModal() {
+      if (!assertUserPermission('create accounts')) return;
+      const box = document.getElementById('modalBox');
+      box.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-xl font-bold text-white">Create New Customer Account</h2>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+          </div>
+          <form onsubmit="handleAddAccountSubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Company / Account Name</label>
+              <input type="text" id="accName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Snowflake Inc.">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Industry</label>
+              <input type="text" id="accIndustry" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Cloud Data Warehousing">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Website URL</label>
+              <input type="text" id="accWebsite" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="https://snowflake.com">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Customer Tier</label>
+              <select id="accTier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                <option value="ENTERPRISE">ENTERPRISE</option>
+                <option value="MID_MARKET">MID_MARKET</option>
+                <option value="SMB">SMB</option>
+              </select>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white rounded-lg">Create Account</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+    }
+
+    function handleAddAccountSubmit(e) {
+      e.preventDefault();
+      const user = getCurrentUser();
+      const name = document.getElementById('accName').value.trim();
+      const industry = document.getElementById('accIndustry').value.trim() || 'Technology';
+      const website = document.getElementById('accWebsite').value.trim();
+      const tier = document.getElementById('accTier').value;
+
+      const newAccount = {
+        id: `acc_${Date.now()}`,
+        name,
+        industry,
+        website,
+        tier,
+        healthScore: 100
+      };
+
+      dataState.accounts.unshift(newAccount);
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'ACCOUNT_CREATED',
+        summary: `Account '${name}' created by ${user.name} under ${tier} tier.`
+      });
+      dataState.auditLogs.unshift({
+        time: 'Just now',
+        action: 'ACCOUNT_CREATED',
+        entity: 'Account',
+        user: user.name
+      });
+
+      saveState();
+      closeModal();
+      showToast('Account Created', `Created account '${name}'. Click on it to view its 360 profile.`);
+      renderView();
+    }
+
+    function openAddContactModal() {
+      if (!assertUserPermission('create contacts')) return;
+      const box = document.getElementById('modalBox');
+      box.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-xl font-bold text-white">Add New Contact</h2>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+          </div>
+          <form onsubmit="handleAddContactSubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+              <input type="text" id="cntName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Frank Slootman">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Title</label>
+              <input type="text" id="cntTitle" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Chairman / Executive">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Email</label>
+              <input type="email" id="cntEmail" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. frank@snowflake.com">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Account</label>
+              <select id="cntAcc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                ${dataState.accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('')}
+              </select>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white rounded-lg">Save Contact</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+    }
+
+    function handleAddContactSubmit(e) {
+      e.preventDefault();
+      const user = getCurrentUser();
+      const name = document.getElementById('cntName').value.trim();
+      const title = document.getElementById('cntTitle').value.trim() || 'Lead Contact';
+      const email = document.getElementById('cntEmail').value.trim();
+      const account = document.getElementById('cntAcc').value;
+
+      dataState.contacts.unshift({
+        id: `cnt_${Date.now()}`,
+        name,
+        title,
+        email,
+        account
+      });
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'CONTACT_CREATED',
+        summary: `Contact '${name}' (${title}) added for account '${account}'.`
+      });
+
+      saveState();
+      closeModal();
+      showToast('Contact Added', `Linked '${name}' to '${account}'.`);
+      renderView();
+    }
+
+    function openAddLeadModal() {
+      if (!assertUserPermission('create leads')) return;
+      const box = document.getElementById('modalBox');
+      box.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-xl font-bold text-white">Capture Inbound Lead</h2>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+          </div>
+          <form onsubmit="handleAddLeadSubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Lead Name</label>
+              <input type="text" id="leadName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Satya Nadella">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Company</label>
+              <input type="text" id="leadCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Microsoft Corp">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Email</label>
+              <input type="email" id="leadEmail" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. satya@microsoft.com">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">AI Qualification Score</label>
+              <input type="number" id="leadScore" min="10" max="100" value="85" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 text-xs bg-emerald-600 text-white rounded-lg">Create Lead</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+    }
+
+    function handleAddLeadSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('leadName').value.trim();
+      const company = document.getElementById('leadCompany').value.trim();
+      const email = document.getElementById('leadEmail').value.trim();
+      const score = parseInt(document.getElementById('leadScore').value, 10) || 75;
+
+      dataState.leads.unshift({
+        id: `lead_${Date.now()}`,
+        name,
+        company,
+        email,
+        score,
+        status: score >= 50 ? 'QUALIFIED' : 'CONTACTED'
+      });
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'LEAD_CREATED',
+        summary: `New lead '${name}' from '${company}' captured (Score: ${score}).`
+      });
+
+      saveState();
+      closeModal();
+      showToast('Lead Captured', `'${name}' added to leads queue.`);
+      renderView();
+    }
+
+    function openAddOpportunityModal() {
+      if (!assertUserPermission('create opportunities')) return;
+      const box = document.getElementById('modalBox');
+      box.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-xl font-bold text-white">Create New Opportunity</h2>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+          </div>
+          <form onsubmit="handleAddOpportunitySubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Deal Title</label>
+              <input type="text" id="oppTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Enterprise Security License">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Estimated Value</label>
+              <input type="text" id="oppVal" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. $120,000">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Pipeline Stage</label>
+              <select id="oppStage" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                ${dataState.pipelineStages.map(s => `<option value="${s}">${s}</option>`).join('')}
+              </select>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white rounded-lg">Save Deal</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+    }
+
+    function handleAddOpportunitySubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('oppTitle').value.trim();
+      const value = document.getElementById('oppVal').value.trim();
+      const stage = document.getElementById('oppStage').value;
+
+      dataState.opportunities.unshift({
+        id: `opp_${Date.now()}`,
+        title,
+        value: value.startsWith('$') ? value : `$${value}`,
+        stage,
+        probability: stage === 'Closed Won' ? '100%' : '50%'
+      });
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'OPPORTUNITY_CREATED',
+        summary: `Opportunity '${title}' created at ${stage} valued at ${value}.`
+      });
+
+      saveState();
+      closeModal();
+      showToast('Opportunity Created', `'${title}' added to Kanban pipeline.`);
+      renderView();
+    }
+
+    function openAddTaskModal() {
+      if (!assertUserPermission('schedule tasks')) return;
+      const box = document.getElementById('modalBox');
+      box.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-xl font-bold text-white">Schedule Work Action Item</h2>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+          </div>
+          <form onsubmit="handleAddTaskSubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Task Subject</label>
+              <input type="text" id="taskSubj" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Executive Quarterly Business Review">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Related Account / Customer</label>
+              <select id="taskAcc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                ${dataState.accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Priority Tier</label>
+              <select id="taskTier" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                <option value="CRITICAL">CRITICAL (Score: 90+)</option>
+                <option value="HIGH">HIGH (Score: 70+)</option>
+                <option value="MEDIUM">MEDIUM (Score: 40+)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Due Date</label>
+              <input type="text" id="taskDue" value="Due in 24 hours" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white rounded-lg">Add to My Work</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+    }
+
+    function handleAddTaskSubmit(e) {
+      e.preventDefault();
+      const user = getCurrentUser();
+      const title = document.getElementById('taskSubj').value.trim();
+      const entityName = document.getElementById('taskAcc').value;
+      const priorityTier = document.getElementById('taskTier').value;
+      const dueDate = document.getElementById('taskDue').value.trim();
+
+      dataState.workItems.unshift({
+        id: `act_${Date.now()}`,
+        title,
+        type: 'TASK',
+        entityType: 'Account',
+        entityName,
+        dueDate,
+        priorityScore: priorityTier === 'CRITICAL' ? 92 : priorityTier === 'HIGH' ? 75 : 45,
+        priorityTier,
+        description: `Created directly by ${user.name}.`
+      });
+
+      document.getElementById('myWorkBadge').textContent = dataState.workItems.length;
+
+      dataState.timeline.unshift({
+        time: 'Just now',
+        type: 'TASK_CREATED',
+        summary: `Action item '${title}' scheduled for '${entityName}'.`
+      });
+
+      saveState();
+      closeModal();
+      showToast('Task Created', 'Added to your high-priority attention queue.');
+      renderView();
+    }
+
+    function promptQuickTask(accName, accId) {
+      closeDrawer();
+      openAddTaskModal();
+      setTimeout(() => {
+        const select = document.getElementById('taskAcc');
+        if (select) select.value = accName;
+      }, 50);
+    }
+
+    // -------------------------------------------------------------
+    // Live Search
+    // -------------------------------------------------------------
+    function handleSearch(query) {
+      const resultsContainer = document.getElementById('searchResults');
+      if (!query || query.trim().length === 0) {
+        resultsContainer.classList.add('hidden');
+        return;
+      }
+
+      const q = query.toLowerCase().trim();
+      const hits = [];
+
+      dataState.accounts.forEach(a => {
+        if (a.name.toLowerCase().includes(q)) {
+          hits.push({ title: a.name, type: 'Account', subtitle: a.tier, entityId: a.id });
+        }
+      });
+      dataState.leads.forEach(l => {
+        if (l.name.toLowerCase().includes(q) || l.company.toLowerCase().includes(q)) {
+          hits.push({ title: l.name, type: 'Lead', subtitle: l.company, entityId: l.id });
+        }
+      });
+      dataState.opportunities.forEach(o => {
+        if (o.title.toLowerCase().includes(q)) {
+          hits.push({ title: o.title, type: 'Opportunity', subtitle: o.value, entityId: o.id });
+        }
+      });
+
+      if (hits.length === 0) {
+        resultsContainer.innerHTML = `<div class="p-4 text-xs text-slate-500 text-center">No matching entities found.</div>`;
+      } else {
+        resultsContainer.innerHTML = hits.map(h => `
+          <div class="p-3 hover:bg-slate-800 cursor-pointer border-b border-slate-800/50 flex justify-between items-center" onclick="document.getElementById('searchResults').classList.add('hidden'); openEntityDetail('${h.type}', '${h.entityId}')">
+            <div>
+              <div class="text-xs font-semibold text-white">${h.title}</div>
+              <div class="text-[10px] text-slate-400">${h.subtitle}</div>
+            </div>
+            <span class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">${h.type}</span>
+          </div>
+        `).join('');
+      }
+      resultsContainer.classList.remove('hidden');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== document.getElementById('globalSearch')) {
+        e.preventDefault();
+        document.getElementById('globalSearch').focus();
+      }
+      if (e.key === 'Escape') {
+        closeModal();
+        closeDrawer();
+      }
+    });
+
+    document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'modalBackdrop') closeModal();
+    });
+    document.getElementById('drawerBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'drawerBackdrop') closeDrawer();
+    });
+
+    // Check Authentication state on load
+    checkAuth();
+  </script>
+</body>
+</html>

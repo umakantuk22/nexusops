@@ -1,0 +1,361 @@
+openapi: 3.0.3
+info:
+  title: NexusOps REST API
+  description: >
+    Production REST API specification for NexusOps — AI-Native Revenue & Customer Operations Platform.
+    Includes multi-tenancy, RBAC, CRM Domain Services, AI Action Gateway, Work Queue, and Audit Trail.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local Development & Sandbox Server
+  - url: https://api.nexusops.io/api/v1
+    description: Production Cluster Gateway
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tenantHeader:
+      type: apiKey
+      in: header
+      name: X-Organization-Id
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Organization ID and account name are required.
+            requestId:
+              type: string
+              example: req_1791173450112
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        name:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        tier:
+          type: string
+          enum: [ENTERPRISE, MID_MARKET, SMB]
+        healthScore:
+          type: integer
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        company:
+          type: string
+        status:
+          type: string
+          enum: [NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CONVERTED]
+        score:
+          type: integer
+        version:
+          type: integer
+
+    AiAction:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        userId:
+          type: string
+        tool:
+          type: string
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        status:
+          type: string
+          enum: [REQUESTED, WAITING_FOR_APPROVAL, APPROVED, REJECTED, EXECUTING, SUCCEEDED, FAILED, EXPIRED]
+        expiresAt:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+  - tenantHeader: []
+
+paths:
+  /health:
+    get:
+      summary: Service Health Check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+
+  /auth/register:
+    post:
+      summary: Register User Account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+
+  /auth/login:
+    post:
+      summary: Authenticate User
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful authentication with JWT token
+
+  /auth/me:
+    get:
+      summary: Get Current Authenticated Profile
+      responses:
+        '200':
+          description: Authenticated user details
+
+  /accounts:
+    get:
+      summary: List Accounts
+      parameters:
+        - name: industry
+          in: query
+          schema:
+            type: string
+        - name: tier
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of accounts
+    post:
+      summary: Create Account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                industry:
+                  type: string
+                website:
+                  type: string
+                tier:
+                  type: string
+      responses:
+        '201':
+          description: Account created
+
+  /leads:
+    get:
+      summary: List Leads
+      responses:
+        '200':
+          description: List of leads
+    post:
+      summary: Create Lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, company]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                company:
+                  type: string
+      responses:
+        '201':
+          description: Lead created
+
+  /leads/{id}/convert:
+    post:
+      summary: Convert Lead to Account, Contact, and Opportunity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dealTitle:
+                  type: string
+                dealValue:
+                  type: number
+      responses:
+        '200':
+          description: Lead converted successfully
+
+  /work-queue:
+    get:
+      summary: Attention-Engine Prioritized Work Queue
+      responses:
+        '200':
+          description: Dynamically ranked action items
+
+  /ai/actions:
+    get:
+      summary: List Pending AI Action Approvals
+      responses:
+        '200':
+          description: Actions waiting for human review
+    post:
+      summary: Request AI Action Dispatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toolName, input]
+              properties:
+                toolName:
+                  type: string
+                input:
+                  type: object
+                idempotencyKey:
+                  type: string
+      responses:
+        '201':
+          description: Action enqueued or executed
+
+  /ai/actions/{id}/approve:
+    post:
+      summary: Approve and Execute Pending AI Action
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Action approved and executed
+
+  /ai/actions/{id}/reject:
+    post:
+      summary: Reject Pending AI Action
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Action rejected
+
+  /billing:
+    get:
+      summary: Organization Plan and Quota Usage Summary
+      responses:
+        '200':
+          description: Billing period quota status
+
+  /audit:
+    get:
+      summary: Get Audit Trail Logs
+      responses:
+        '200':
+          description: List of audit records
+
+  /audit/verify:
+    get:
+      summary: Verify SHA-256 Cryptographic Audit Chain Integrity
+      responses:
+        '200':
+          description: Integrity report

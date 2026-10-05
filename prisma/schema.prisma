@@ -1,0 +1,418 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActionStatus {
+  REQUESTED
+  VALIDATING
+  WAITING_FOR_APPROVAL
+  APPROVED
+  REJECTED
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  plan        String       @default("free")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  memberships Membership[]
+  invitations Invitation[]
+  auditLogs   AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  memberships  Membership[]
+  auditLogs    AuditLog[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  role           Role         @default(MEMBER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id             String           @id @default(uuid())
+  organizationId String
+  email          String
+  role           Role             @default(MEMBER)
+  token          String           @unique
+  expiresAt      DateTime
+  status         InvitationStatus @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitations")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String
+  details        Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+enum Tier {
+  ENTERPRISE
+  MID_MARKET
+  SMB
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  TASK
+}
+
+enum ActivityStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Account {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  industry       String?
+  website        String?
+  tier           Tier          @default(SMB)
+  healthScore    Int           @default(100)
+  version        Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+  opportunities  Opportunity[]
+
+  @@index([organizationId])
+  @@map("accounts")
+}
+
+model Contact {
+  id             String        @id @default(uuid())
+  organizationId String
+  accountId      String?
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  title          String?
+  version        Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account        Account?      @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("contacts")
+}
+
+model Lead {
+  id                     String        @id @default(uuid())
+  organizationId         String
+  firstName              String
+  lastName               String
+  email                  String
+  company                String
+  status                 LeadStatus    @default(NEW)
+  score                  Int           @default(0)
+  source                 String?
+  convertedAccountId     String?
+  convertedOpportunityId String?
+  version                Int           @default(1)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  organization           Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("leads")
+}
+
+model Pipeline {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  isDefault      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stages         PipelineStage[]
+  opportunities  Opportunity[]
+
+  @@index([organizationId])
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id             String        @id @default(uuid())
+  pipelineId     String
+  name           String
+  order          Int
+  winProbability Int           @default(0)
+  isClosedWon    Boolean       @default(false)
+  isClosedLost   Boolean       @default(false)
+
+  pipeline       Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities  Opportunity[]
+
+  @@index([pipelineId])
+  @@map("pipeline_stages")
+}
+
+model Opportunity {
+  id             String            @id @default(uuid())
+  organizationId String
+  accountId      String
+  pipelineId     String
+  stageId        String
+  title          String
+  value          Float             @default(0)
+  currency       String            @default("USD")
+  closeDate      DateTime?
+  status         OpportunityStatus @default(OPEN)
+  lostReason     String?
+  version        Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account        Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pipeline       Pipeline          @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stage          PipelineStage     @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([accountId])
+  @@map("opportunities")
+}
+
+model Activity {
+  id             String         @id @default(uuid())
+  organizationId String
+  userId         String?
+  entityType     String
+  entityId       String
+  type           ActivityType
+  subject        String
+  description    String?
+  status         ActivityStatus @default(PENDING)
+  dueDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@map("activities")
+}
+
+model TimelineEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  entityType     String
+  entityId       String
+  eventType      String
+  summary        String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@map("timeline_events")
+}
+
+model AiAction {
+  id                        String       @id @default(uuid())
+  organizationId            String
+  userId                    String
+  agentId                   String?
+  tool                      String
+  input                     Json
+  riskLevel                 RiskLevel
+  status                    ActionStatus @default(REQUESTED)
+  idempotencyKey            String?
+  expiresAt                 DateTime
+  enforceSeparationOfDuties Boolean      @default(false)
+  approvedBy                String?
+  approvedAt                DateTime?
+  rejectionReason           String?
+  result                    Json?
+  error                     String?
+  createdAt                 DateTime     @default(now())
+  completedAt               DateTime?
+
+  organization              Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([idempotencyKey])
+  @@map("ai_actions")
+}
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  revokedAt DateTime @default(now())
+
+  @@map("revoked_tokens")
+}
+
+model OutboxJob {
+  id             String    @id @default(uuid())
+  organizationId String
+  eventType      String
+  payload        Json
+  idempotencyKey String?
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(3)
+  lastError      String?
+  result         Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("outbox_jobs")
+}
+
+model IdempotencyKey {
+  id             String   @id @default(uuid())
+  key            String   @unique
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@map("idempotency_keys")
+}
+
+model UsageRecord {
+  id             String   @id @default(uuid())
+  organizationId String
+  metric         String
+  periodStart    DateTime
+  periodEnd      DateTime
+  quantity       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, metric, periodStart])
+  @@index([organizationId])
+  @@map("usage_records")
+}

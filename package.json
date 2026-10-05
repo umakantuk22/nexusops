@@ -1,0 +1,27 @@
+{
+  "name": "nexus-ops",
+  "version": "0.3.0",
+  "description": "NexusOps — AI-Native Revenue & Customer Operations Platform",
+  "type": "module",
+  "main": "src/server/index.js",
+  "scripts": {
+    "dev": "node src/server/index.js",
+    "start": "node src/server/index.js",
+    "test": "node --test tests/unit/crypto.test.js tests/unit/authorization.test.js tests/unit/work_engine.test.js tests/unit/automation.test.js tests/unit/entitlements.test.js tests/unit/meeting_and_email.test.js tests/unit/deal_health.test.js tests/unit/csv_and_fls.test.js tests/integration/identity_and_org.test.js tests/integration/crm_domain.test.js tests/security/tenant_isolation.test.js tests/security/ai_gateway_security.test.js tests/security/production_hardening.test.js",
+    "db:seed": "node scripts/seed.js",
+    "db:backup": "node scripts/backup_restore.js backup",
+    "db:restore": "node scripts/backup_restore.js restore"
+  },
+  "keywords": [
+    "nexusops",
+    "revops",
+    "ai-native",
+    "action-gateway",
+    "revenue-operations",
+    "multi-tenant",
+    "modular-monolith"
+  ],
+  "author": "NexusOps Engineering Team",
+  "license": "UNLICENSED",
+  "private": true
+}
